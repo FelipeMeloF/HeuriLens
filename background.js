@@ -16,7 +16,7 @@ async function runAuditOnTab(tabId) {
     // Injetar axe-core primeiro
     await chrome.scripting.executeScript({
       target: { tabId },
-      files: ['lib/axe-core.min.js']
+      files: ['lib/axe-core.min.js', 'lib/axe-pt-br.js']
     });
 
     // Injetar módulos de análise

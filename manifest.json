@@ -30,6 +30,7 @@
         {
             "resources": [
                 "lib/axe-core.min.js",
+                "lib/axe-pt-br.js",
                 "assets/overlay-icons.css"
             ],
             "matches": [
