@@ -57,7 +57,7 @@ graph TD
 ## 📁 Estrutura do Projeto
 
 ```
-heuristic-extension/
+HeuriLens/
 ├── manifest.json                # Manifest V3 — configuração da extensão
 ├── background.js                # Service Worker — injeção, comunicação, storage
 ├── content/
@@ -224,7 +224,7 @@ Relatório completo em JSON contendo:
 
 1. Clone este repositório:
    ```bash
-   git clone https://github.com/FelipeMeloF/heuristic-extension.git
+   git clone https://github.com/FelipeMeloF/HeuriLens.git
    ```
 
 2. Abra o Chrome e navegue até:
@@ -236,7 +236,7 @@ Relatório completo em JSON contendo:
 
 4. Clique em **"Carregar sem compactação"**
 
-5. Selecione a pasta `heuristic-extension/`
+5. Selecione a pasta `HeuriLens/`
 
 ### Como usar
 
