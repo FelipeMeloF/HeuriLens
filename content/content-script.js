@@ -46,7 +46,17 @@
                 reporter: 'v2'
             };
 
-            const axeResults = await axe.run(document, axeConfig);
+            // Definir contexto com exclusões (elementos da própria extensão)
+            const context = {
+                include: [['html']],
+                exclude: [
+                    ['#__heuristic-auditor-panel'],
+                    ['#__heuristic-auditor-overlay'],
+                    ['#__ha-toggle-btn']
+                ]
+            };
+
+            const axeResults = await axe.run(context, axeConfig);
 
             // Processar violações
             const processedIssues = (axeResults.violations || []).map(violation => {

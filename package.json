@@ -1,23 +1,21 @@
 {
-  "name": "heuristic-extension",
+  "name": "heurilens",
   "version": "1.0.0",
-  "description": "",
+  "description": "Heuristic Accessibility and Usability Auditor (WCAG 2.1 + Nielsen)",
   "main": "background.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/FelipeMeloF/heuristic-extension.git"
+    "url": "git+https://github.com/FelipeMeloF/HeuriLens.git"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
+  "author": "Felipe Melo",
+  "license": "MIT",
   "bugs": {
-    "url": "https://github.com/FelipeMeloF/heuristic-extension/issues"
+    "url": "https://github.com/FelipeMeloF/HeuriLens/issues"
   },
-  "homepage": "https://github.com/FelipeMeloF/heuristic-extension#readme",
+  "homepage": "https://github.com/FelipeMeloF/HeuriLens#readme",
   "dependencies": {
     "axe-core": "^4.10.2",
     "sharp": "^0.33.2"
