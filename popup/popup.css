@@ -373,6 +373,12 @@ body::-webkit-scrollbar-thumb:hover {
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
+.severity-card.active {
+    transform: translateY(-2px);
+    box-shadow: 0 0 0 2px var(--text-primary), 0 4px 15px rgba(0, 0, 0, 0.3);
+    z-index: 1;
+}
+
 .severity-count {
     font-size: 26px;
     font-weight: 800;

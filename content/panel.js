@@ -15,6 +15,8 @@
     document.getElementById(PANEL_ID).remove();
   }
 
+  let activeSeverityFilter = null; // null = todos, 'critical', etc.
+
   // === Ícones SVG por tipo de problema ===
   const PANEL_RULE_ICONS = {
     'image-alt': { label: 'Img Alt', svg: '<svg viewBox="0 0 24 24" fill="none" width="14" height="14"><rect x="2" y="4" width="20" height="16" rx="2" stroke="currentColor" stroke-width="1.5"/><circle cx="8" cy="10" r="2" fill="currentColor"/><path d="M2 17l5-5 3 3 4-4 8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><line x1="1" y1="23" x2="23" y2="1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>' },
@@ -140,6 +142,11 @@
     #${PANEL_ID} .ha-panel-scrollable::-webkit-scrollbar { width: 5px; }
     #${PANEL_ID} .ha-panel-scrollable::-webkit-scrollbar-track { background: transparent; }
     #${PANEL_ID} .ha-panel-scrollable::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+    
+    .__ha-sev-card { cursor: pointer; transition: all 0.2s; }
+    .__ha-sev-card:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+    .__ha-sev-card.active { transform: translateY(-2px); box-shadow: 0 0 0 2px #f1f5f9, 0 4px 15px rgba(0,0,0,0.3); z-index: 1; opacity: 1 !important; }
+    .__ha-sev-card.inactive { opacity: 0.4; }
   `;
   document.head.appendChild(styleTag);
 
@@ -462,16 +469,36 @@
 
   function renderResults(results) {
     const s = results.summary || {};
+
+    // Filtrar issues se necessário
+    let finalByHeuristic = results.byHeuristic || {};
+    if (activeSeverityFilter) {
+      const filtered = {};
+      Object.entries(finalByHeuristic).forEach(([id, data]) => {
+        const issues = data.issues.filter(i => i.severity.level === activeSeverityFilter);
+        if (issues.length > 0) {
+          filtered[id] = { ...data, issues };
+        }
+      });
+      finalByHeuristic = filtered;
+    }
+
     let html = `
       <!-- Severity cards -->
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;">
-        ${['critical', 'serious', 'moderate', 'minor'].map(level => `
-          <div style="padding:10px 6px;border-radius:10px;text-align:center;background:${SEV[level].bg};border:1px solid rgba(255,255,255,0.06);position:relative;overflow:hidden;">
+        ${['critical', 'serious', 'moderate', 'minor'].map(level => {
+      const isActive = activeSeverityFilter === level;
+      const isDimmed = activeSeverityFilter && !isActive;
+      const classes = `__ha-sev-card ${isActive ? 'active' : ''} ${isDimmed ? 'inactive' : ''}`;
+
+      return `
+          <div class="${classes}" data-level="${level}" style="padding:10px 6px;border-radius:10px;text-align:center;background:${SEV[level].bg};border:1px solid rgba(255,255,255,0.06);position:relative;overflow:hidden;">
             <div style="position:absolute;top:0;left:0;right:0;height:2px;background:${SEV[level].color};"></div>
             <div style="font-size:22px;font-weight:800;color:${SEV[level].color};line-height:1;">${s[level] || 0}</div>
             <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.4px;color:#94a3b8;">${SEV[level].label}</div>
           </div>
-        `).join('')}
+        `;
+    }).join('')}
       </div>
 
       <!-- Stats -->
@@ -510,16 +537,21 @@
     `;
 
     // Issues by heuristic
-    const byH = results.byHeuristic || {};
-    const entries = Object.entries(byH).sort((a, b) => b[1].issues.length - a[1].issues.length);
+    const entries = Object.entries(finalByHeuristic).sort((a, b) => b[1].issues.length - a[1].issues.length);
 
     if (entries.length === 0) {
-      html += `<div style="text-align:center;padding:20px;color:#22c55e;font-weight:600;">🎉 Nenhum problema encontrado!</div>`;
+      const msg = activeSeverityFilter ? 'Nenhum problema nesta severidade.' : '🎉 Nenhum problema encontrado!';
+      html += `<div style="text-align:center;padding:20px;color:#22c55e;font-weight:600;">${msg}</div>`;
     }
 
     entries.forEach(([hId, data], idx) => {
       const h = data.heuristic || { id: hId, name: 'Não classificada' };
       const count = data.issues.length;
+
+      // Se filtro ativo, abrir por padrão
+      const isOpenDefault = !!activeSeverityFilter;
+      const detailsStyle = isOpenDefault ? `max-height:1000px;` : `max-height:0;`;
+      const chevStyle = isOpenDefault ? `transform:rotate(180deg);` : ``;
 
       html += `
         <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:10px;margin-bottom:6px;overflow:hidden;" class="__ha-hgroup">
@@ -529,9 +561,9 @@
               <span style="font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${h.name || 'Sem categoria'}</span>
             </div>
             <span style="padding:2px 8px;border-radius:12px;font-size:10px;font-weight:700;background:rgba(255,255,255,0.06);color:#94a3b8;flex-shrink:0;margin-left:8px;">${count}</span>
-            <svg class="__ha-chev" style="transition:transform 0.3s;color:#64748b;flex-shrink:0;margin-left:6px;" width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 6L8 10L12 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <svg class="__ha-chev" style="transition:transform 0.3s;color:#64748b;flex-shrink:0;margin-left:6px;${chevStyle}" width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 6L8 10L12 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
-          <div class="__ha-hdetails" style="max-height:0;overflow:hidden;transition:max-height 0.3s ease;">
+          <div class="__ha-hdetails" style="overflow:hidden;transition:max-height 0.3s ease;${detailsStyle}">
       `;
 
       data.issues.forEach(issue => {
@@ -560,7 +592,17 @@
 
     body.innerHTML = html;
 
-    // Bind actions
+    // === Bind actions ===
+
+    // Severity Filter
+    body.querySelectorAll('.__ha-sev-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const level = card.dataset.level;
+        activeSeverityFilter = (activeSeverityFilter === level) ? null : level;
+        renderResults(results);
+      });
+    });
+
     body.querySelectorAll('.__ha-pnl-btn').forEach(btn => {
       btn.addEventListener('mouseenter', () => { btn.style.background = btn.dataset.action === 'export' ? 'linear-gradient(135deg,#667eea,#764ba2)' : 'rgba(255,255,255,0.08)'; });
       btn.addEventListener('mouseleave', () => { btn.style.background = btn.dataset.action === 'export' ? 'linear-gradient(135deg,#667eea,#764ba2)' : 'rgba(255,255,255,0.04)'; });
@@ -601,7 +643,7 @@
           details.style.maxHeight = '0px';
           chev.style.transform = '';
         } else {
-          details.style.maxHeight = details.scrollHeight + 'px';
+          details.style.maxHeight = '1000px'; // Usar 1000px pra garantir abertura
           chev.style.transform = 'rotate(180deg)';
         }
       });

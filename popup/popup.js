@@ -118,6 +118,7 @@
 
     // === Gerenciamento de Estado ===
     let currentResults = null;
+    let activeSeverityFilter = null; // null = todos, 'critical', 'serious', etc.
 
     function showState(state) {
         [stateIdle, stateAnalyzing, stateResults, stateError].forEach(el => {
@@ -132,9 +133,48 @@
         }
     }
 
+    // === Event Listeners Filtro ===
+    document.querySelectorAll('.severity-card').forEach(card => {
+        card.addEventListener('click', () => {
+            if (!currentResults) return;
+            const severity = card.dataset.severity;
+
+            // Toggle filtro
+            if (activeSeverityFilter === severity) {
+                activeSeverityFilter = null;
+            } else {
+                activeSeverityFilter = severity;
+            }
+
+            // Atualizar UI dos cards
+            updateFilterUI();
+
+            // Re-renderizar lista
+            renderIssuesByHeuristic(currentResults.byHeuristic || {});
+        });
+    });
+
+    function updateFilterUI() {
+        document.querySelectorAll('.severity-card').forEach(card => {
+            const sev = card.dataset.severity;
+            if (activeSeverityFilter === sev) {
+                card.classList.add('active');
+                card.style.opacity = '1';
+            } else if (activeSeverityFilter) {
+                card.classList.remove('active');
+                card.style.opacity = '0.4'; // Diminui opacidade dos não selecionados
+            } else {
+                card.classList.remove('active');
+                card.style.opacity = '1'; // Todos visíveis normal
+            }
+        });
+    }
+
     // === Auditoria ===
     function startAudit() {
         showState('analyzing');
+        activeSeverityFilter = null; // Resetar filtro ao iniciar nova análise
+        updateFilterUI();
 
         chrome.runtime.sendMessage({ action: 'runAudit' }, (response) => {
             if (chrome.runtime.lastError) {
@@ -210,13 +250,27 @@
     function renderIssuesByHeuristic(byHeuristic) {
         issuesList.innerHTML = '';
 
-        const heuristicEntries = Object.entries(byHeuristic);
+        let heuristicEntries = Object.entries(byHeuristic);
+
+        // Filtrar heurísticas se houver filtro de severidade ativo
+        if (activeSeverityFilter) {
+            heuristicEntries = heuristicEntries
+                .map(([id, data]) => {
+                    const filteredIssues = data.issues.filter(issue => issue.severity.level === activeSeverityFilter);
+                    return [id, { ...data, issues: filteredIssues }];
+                })
+                .filter(([, data]) => data.issues.length > 0);
+        }
 
         if (heuristicEntries.length === 0) {
+            const emptyMessage = activeSeverityFilter
+                ? 'Nenhum problema com esta severidade.'
+                : 'Nenhum problema encontrado!';
+
             issuesList.innerHTML = `
         <div class="all-clear">
           <div class="all-clear-icon">🎉</div>
-          Nenhum problema encontrado!
+          ${emptyMessage}
         </div>
       `;
             return;
@@ -250,6 +304,12 @@
             // Container de detalhes (colapsível)
             const details = document.createElement('div');
             details.className = 'heuristic-details';
+
+            // Se houver filtro, manter aberto por padrão para facilitar visualização
+            if (activeSeverityFilter) {
+                details.classList.add('open');
+                header.querySelector('.chevron').classList.add('open');
+            }
 
             data.issues.forEach(issue => {
                 const item = document.createElement('div');
