@@ -490,9 +490,11 @@
       const isActive = activeSeverityFilter === level;
       const isDimmed = activeSeverityFilter && !isActive;
       const classes = `__ha-sev-card ${isActive ? 'active' : ''} ${isDimmed ? 'inactive' : ''}`;
+      const borderColor = isActive ? SEV[level].color : 'rgba(255,255,255,0.06)';
+      const opacity = isDimmed ? '0.4' : '1';
 
       return `
-          <div class="${classes}" data-level="${level}" style="padding:10px 6px;border-radius:10px;text-align:center;background:${SEV[level].bg};border:1px solid rgba(255,255,255,0.06);position:relative;overflow:hidden;">
+          <div class="${classes}" data-level="${level}" style="padding:10px 6px;border-radius:10px;text-align:center;background:${SEV[level].bg};border:1px solid ${borderColor};position:relative;overflow:hidden;opacity:${opacity};">
             <div style="position:absolute;top:0;left:0;right:0;height:2px;background:${SEV[level].color};"></div>
             <div style="font-size:22px;font-weight:800;color:${SEV[level].color};line-height:1;">${s[level] || 0}</div>
             <div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.4px;color:#94a3b8;">${SEV[level].label}</div>
@@ -532,7 +534,7 @@
 
       <!-- Issues header -->
       <div style="font-size:12px;font-weight:700;color:#f1f5f9;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.08);">
-        Problemas por Heurística
+        Problemas por Heurística ${activeSeverityFilter ? `<span style="font-weight:400;color:${SEV[activeSeverityFilter].color};margin-left:6px;">(Filtro: ${SEV[activeSeverityFilter].label})</span>` : ''}
       </div>
     `;
 
@@ -598,6 +600,7 @@
     body.querySelectorAll('.__ha-sev-card').forEach(card => {
       card.addEventListener('click', () => {
         const level = card.dataset.level;
+        console.log('HeuriLens: Severity filter clicked:', level);
         activeSeverityFilter = (activeSeverityFilter === level) ? null : level;
         renderResults(results);
       });
