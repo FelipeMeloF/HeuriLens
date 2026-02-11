@@ -292,7 +292,7 @@
         const sev = SEVERITY_COLORS[issue.severity?.level] || SEVERITY_COLORS.minor;
         const icon = getIconForRule(issue.id);
 
-        // Badge container (retângulo arredondado com ícone + label)
+        // Badge container (círculo com apenas ícone)
         const badge = document.createElement('div');
         badge.className = BADGE_CLASS;
         badge.dataset.severity = issue.severity?.level || 'minor';
@@ -302,48 +302,40 @@
       position: fixed;
       top: ${rect.top - 12}px;
       left: ${rect.left + rect.width - 12}px;
-      height: 26px;
-      padding: 0 8px 0 4px;
-      border-radius: 13px;
+      width: 24px;
+      height: 24px;
+      padding: 0;
+      border-radius: 50%;
       background: ${sev.color};
       color: white;
-      display: inline-flex;
+      display: flex;
       align-items: center;
-      gap: 3px;
-      font-size: 10px;
-      font-weight: 700;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      justify-content: center;
+      line-height: 0;
       cursor: pointer;
       pointer-events: all;
       box-shadow: 0 2px 10px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.15);
       z-index: 2147483647;
       transition: transform 0.2s ease, box-shadow 0.2s ease;
       animation: __ha-pulse 2.5s ease-in-out infinite;
-      white-space: nowrap;
-      line-height: 1;
-      letter-spacing: 0.3px;
-      text-transform: uppercase;
       border: 1.5px solid rgba(255,255,255,0.25);
     `;
 
         // SVG icon
         const iconEl = document.createElement('span');
         iconEl.style.cssText = `
-      display: inline-flex;
+      display: flex;
       align-items: center;
       justify-content: center;
-      width: 18px;
-      height: 18px;
-      flex-shrink: 0;
+      width: 14px;
+      height: 14px;
+      line-height: 0;
+      margin: 0;
+      padding: 0;
     `;
         iconEl.innerHTML = icon.svg;
 
-        // Label text
-        const labelEl = document.createElement('span');
-        labelEl.textContent = icon.label;
-
         badge.appendChild(iconEl);
-        badge.appendChild(labelEl);
         badge.title = `${sev.label}: ${issue.description || ''}`;
 
         // Hover interactions

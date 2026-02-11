@@ -41,29 +41,31 @@
   z-index: 2147483647 !important;
 }
 
-/* Badge de alerta — formato pill com ícone + label */
+/* Badge de alerta — círculo com ícone */
 .__ha-badge {
   position: fixed !important;
-  height: 26px !important;
-  padding: 0 8px 0 4px !important;
-  border-radius: 13px !important;
+  width: 24px !important;
+  height: 24px !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
   color: white !important;
-  display: inline-flex !important;
+  display: flex !important;
   align-items: center !important;
-  gap: 3px !important;
-  font-size: 10px !important;
-  font-weight: 700 !important;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  justify-content: center !important;
+  line-height: 0 !important;
   cursor: pointer !important;
   pointer-events: all !important;
   z-index: 2147483647 !important;
   transition: transform 0.2s ease, box-shadow 0.2s ease !important;
   animation: __ha-pulse 2.5s ease-in-out infinite !important;
-  white-space: nowrap !important;
-  line-height: 1 !important;
-  letter-spacing: 0.3px !important;
-  text-transform: uppercase !important;
   border: 1.5px solid rgba(255, 255, 255, 0.25) !important;
+}
+
+.__ha-badge svg {
+  width: 14px !important;
+  height: 14px !important;
+  display: block !important;
+  margin: 0 auto !important;
 }
 
 .__ha-badge:hover {
