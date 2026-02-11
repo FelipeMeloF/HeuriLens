@@ -64,14 +64,16 @@ heuristic-extension/
 │   ├── content-script.js        # Orquestrador principal da auditoria
 │   ├── heuristics-mapper.js     # Mapeamento de regras axe-core → Heurísticas de Nielsen
 │   ├── severity-calculator.js   # Classificação de severidade (4 níveis)
-│   └── overlay.js               # Ícones de alerta sobrepostos no DOM
+│   ├── overlay.js               # Badges circulares com ícones sobre os elementos
+│   └── panel.js                 # Painel flutuante reposicionável (drag & drop)
 ├── popup/
-│   ├── popup.html               # Interface do dashboard
+│   ├── popup.html               # Interface do dashboard + guia de legendas
 │   ├── popup.css                # Estilos premium (dark mode, glassmorphism)
-│   └── popup.js                 # Lógica do popup e renderização
+│   └── popup.js                 # Lógica do popup, legendas e renderização
 ├── lib/
 │   └── axe-core.min.js          # Biblioteca axe-core v4.10.2
 ├── icons/
+│   ├── logo.svg                 # Logo vetorial original
 │   ├── icon16.png               # Ícone 16x16
 │   ├── icon32.png               # Ícone 32x32
 │   ├── icon48.png               # Ícone 48x48
@@ -137,16 +139,34 @@ Dashboard premium com **dark mode** e **glassmorphism**:
 
 ### 5. 🎯 Overlay Visual
 
-Ícones de alerta injetados diretamente sobre os elementos problemáticos:
+Badges circulares com ícones SVG diferenciados por tipo de problema, injetados sobre os elementos:
 
 - Posicionamento via `getBoundingClientRect()`
-- **Badges coloridos** por severidade (🔴🟠🟡🔵)
+- **20 ícones SVG distintos** por categoria (imagem, contraste, label, heading, link, ARIA, etc.)
+- **Badges circulares** coloridos por severidade (🔴🟠🟡🔵)
 - **Tooltips** detalhados ao hover (descrição, heurística, WCAG, instâncias)
 - **Highlight** do elemento com contorno ao passar o mouse
 - **Reposicionamento automático** em scroll e resize
 - **Animação de pulse** para chamar atenção
 
-### 6. 📄 Exportação JSON (formato Lighthouse)
+### 6. 🔲 Painel Flutuante Reposicionável
+
+- **Drag & drop** — arraste livremente pela tela
+- **Minimizar/fechar** — controles no cabeçalho
+- **Guia de Legendas** integrado (botão ?) com WCAG, severidade, ícones e heurísticas
+- **Persistência de posição** via `localStorage`
+- Dashboard completo com reanálise, overlay e exportação JSON
+
+### 7. ❓ Guia de Legendas
+
+Acessível tanto no popup quanto no painel flutuante:
+
+- **Níveis WCAG** — A (essencial), AA (recomendado), AAA (ideal)
+- **Severidade** — Crítico, Sério, Moderado, Menor com descrição de impacto
+- **Ícones** — Grid visual com todos os 20 tipos de problema da extensão
+- **Heurísticas de Nielsen** — H1 a H10 com nome e descrição
+
+### 8. 📄 Exportação JSON (formato Lighthouse)
 
 Relatório completo em JSON contendo:
 
