@@ -1,6 +1,6 @@
 {
     "manifest_version": 3,
-    "name": "Heuristic Accessibility Auditor",
+    "name": "HeuriLens - Heuristic Accessibility and Usability Auditor",
     "version": "1.0.0",
     "description": "Auditoria automática de acessibilidade (WCAG 2.1) e usabilidade (Heurísticas de Nielsen) para páginas web.",
     "permissions": [

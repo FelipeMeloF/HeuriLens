@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="icons/icon128.png" alt="Heuristic Auditor" width="100" />
+  <img src="icons/icon128.png" alt="HeuriLens" width="100" />
 </p>
 
-<h1 align="center">Heuristic Accessibility Auditor</h1>
+<h1 align="center">HeuriLens - Heuristic Accessibility and Usability Auditor</h1>
 
 <p align="center">
   <strong>Extensão Chrome (Manifest V3) para auditoria automática de acessibilidade (WCAG 2.1) e usabilidade (Heurísticas de Nielsen).</strong>
@@ -20,7 +20,7 @@
 
 ## 📋 Sobre
 
-O **Heuristic Accessibility Auditor** é uma extensão do Google Chrome que realiza auditorias automáticas em páginas web, combinando duas perspectivas complementares:
+O **HeuriLens** é uma extensão do Google Chrome que realiza auditorias automáticas em páginas web, combinando duas perspectivas complementares:
 
 - **Acessibilidade técnica** — baseada nos critérios da [WCAG 2.1](https://www.w3.org/TR/WCAG21/) (nível A e AA)
 - **Usabilidade** — baseada nas [10 Heurísticas de Usabilidade de Jakob Nielsen](https://www.nngroup.com/articles/ten-usability-heuristics/)
@@ -173,7 +173,7 @@ Relatório completo em JSON contendo:
 ```json
 {
   "meta": {
-    "toolName": "Heuristic Accessibility Auditor",
+    "toolName": "HeuriLens",
     "version": "1.0.0",
     "timestamp": "2026-02-10T22:15:00.000Z",
     "url": "https://example.com",

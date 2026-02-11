@@ -71,7 +71,7 @@ function generateExportReport(auditResults) {
 
   const report = {
     meta: {
-      toolName: 'Heuristic Accessibility Auditor',
+      toolName: 'HeuriLens - Heuristic Accessibility and Usability Auditor',
       version: '1.0.0',
       timestamp: new Date().toISOString(),
       url: auditResults.url || '',

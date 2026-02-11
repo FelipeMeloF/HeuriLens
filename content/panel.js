@@ -166,7 +166,7 @@
         <defs><linearGradient id="__ha_pg1" x1="0" y1="0" x2="28" y2="28"><stop offset="0%" stop-color="#667eea"/><stop offset="100%" stop-color="#764ba2"/></linearGradient></defs>
       </svg>
       <div>
-        <div style="font-size:14px;font-weight:800;background:linear-gradient(135deg,#667eea,#764ba2);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Heuristic Auditor</div>
+        <div style="font-size:14px;font-weight:800;background:linear-gradient(135deg,#667eea,#764ba2);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">HeuriLens</div>
         <div style="font-size:9px;color:#64748b;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;">WCAG 2.1 + NIELSEN • ARRASTE PARA MOVER</div>
       </div>
     </div>
