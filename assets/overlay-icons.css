@@ -1,0 +1,161 @@
+/* ==============================================
+   overlay-icons.css — Estilos dos ícones de alerta
+   do Heuristic Accessibility Auditor
+   Estilo WAVE com ícones SVG diferenciados por tipo
+   ============================================== */
+
+/* Animação de pulse nos badges */
+@keyframes __ha-pulse {
+
+  0%,
+  100% {
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  }
+
+  50% {
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 0 0 5px rgba(220, 38, 38, 0.12);
+  }
+}
+
+/* Animação de fade-in para tooltips */
+@keyframes __ha-fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Container principal do overlay */
+#__heuristic-auditor-overlay {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  pointer-events: none !important;
+  z-index: 2147483647 !important;
+}
+
+/* Badge de alerta — formato pill com ícone + label */
+.__ha-badge {
+  position: fixed !important;
+  height: 26px !important;
+  padding: 0 8px 0 4px !important;
+  border-radius: 13px !important;
+  color: white !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 3px !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  cursor: pointer !important;
+  pointer-events: all !important;
+  z-index: 2147483647 !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+  animation: __ha-pulse 2.5s ease-in-out infinite !important;
+  white-space: nowrap !important;
+  line-height: 1 !important;
+  letter-spacing: 0.3px !important;
+  text-transform: uppercase !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.25) !important;
+}
+
+.__ha-badge:hover {
+  transform: scale(1.15) !important;
+}
+
+/* Ícone SVG dentro do badge */
+.__ha-badge svg {
+  width: 14px !important;
+  height: 14px !important;
+  flex-shrink: 0 !important;
+}
+
+/* Severidade: Crítico */
+.__ha-badge[data-severity="critical"] {
+  background: #dc2626 !important;
+}
+
+.__ha-badge[data-severity="critical"]:hover {
+  box-shadow: 0 4px 20px rgba(220, 38, 38, 0.5) !important;
+}
+
+/* Severidade: Sério */
+.__ha-badge[data-severity="serious"] {
+  background: #ea580c !important;
+}
+
+.__ha-badge[data-severity="serious"]:hover {
+  box-shadow: 0 4px 20px rgba(234, 88, 12, 0.5) !important;
+}
+
+/* Severidade: Moderado */
+.__ha-badge[data-severity="moderate"] {
+  background: #ca8a04 !important;
+}
+
+.__ha-badge[data-severity="moderate"]:hover {
+  box-shadow: 0 4px 20px rgba(202, 138, 4, 0.5) !important;
+}
+
+/* Severidade: Menor */
+.__ha-badge[data-severity="minor"] {
+  background: #2563eb !important;
+}
+
+.__ha-badge[data-severity="minor"]:hover {
+  box-shadow: 0 4px 20px rgba(37, 99, 235, 0.5) !important;
+}
+
+/* Tooltip */
+.__ha-tooltip {
+  position: fixed !important;
+  width: 300px !important;
+  border-radius: 12px !important;
+  padding: 14px 16px !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-size: 12px !important;
+  color: #1e293b !important;
+  pointer-events: all !important;
+  z-index: 2147483647 !important;
+  animation: __ha-fadeIn 0.2s ease !important;
+}
+
+/* SVG dentro do tooltip header */
+.__ha-tooltip svg {
+  width: 18px !important;
+  height: 18px !important;
+}
+
+/* Toggle Button global */
+#__ha-toggle-btn {
+  position: fixed !important;
+  bottom: 20px !important;
+  right: 20px !important;
+  width: 48px !important;
+  height: 48px !important;
+  border-radius: 50% !important;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: white !important;
+  border: none !important;
+  font-size: 20px !important;
+  cursor: pointer !important;
+  pointer-events: all !important;
+  z-index: 2147483647 !important;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4) !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+#__ha-toggle-btn:hover {
+  transform: scale(1.1) !important;
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6) !important;
+}

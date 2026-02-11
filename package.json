@@ -1,0 +1,25 @@
+{
+  "name": "heuristic-extension",
+  "version": "1.0.0",
+  "description": "",
+  "main": "background.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FelipeMeloF/heuristic-extension.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/FelipeMeloF/heuristic-extension/issues"
+  },
+  "homepage": "https://github.com/FelipeMeloF/heuristic-extension#readme",
+  "dependencies": {
+    "axe-core": "^4.10.2",
+    "sharp": "^0.33.2"
+  }
+}
