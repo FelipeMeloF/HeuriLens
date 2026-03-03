@@ -102,6 +102,9 @@
     const btnToggleOverlay = document.getElementById('btn-toggle-overlay');
     const btnRetry = document.getElementById('btn-retry');
 
+    const personaSelectIdle = document.getElementById('persona-select-idle');
+    const personaSelectResults = document.getElementById('persona-select-results');
+
     const countCritical = document.getElementById('count-critical');
     const countSerious = document.getElementById('count-serious');
     const countModerate = document.getElementById('count-moderate');
@@ -176,7 +179,14 @@
         activeSeverityFilter = null; // Resetar filtro ao iniciar nova análise
         updateFilterUI();
 
-        chrome.runtime.sendMessage({ action: 'runAudit' }, (response) => {
+        let selectedPersona = 'completo';
+        if (personaSelectResults && !stateResults.classList.contains('hidden')) {
+            selectedPersona = personaSelectResults.value;
+        } else if (personaSelectIdle) {
+            selectedPersona = personaSelectIdle.value;
+        }
+
+        chrome.runtime.sendMessage({ action: 'runAudit', persona: selectedPersona }, (response) => {
             if (chrome.runtime.lastError) {
                 showError('Erro de comunicação: ' + chrome.runtime.lastError.message);
                 return;
@@ -464,6 +474,27 @@
     }
 
     // === Inicialização ===
+
+    // Configuração das personas
+    function initPersonas() {
+        chrome.storage.local.get('selectedPersona', (data) => {
+            const saved = data.selectedPersona || 'completo';
+            if (personaSelectIdle) personaSelectIdle.value = saved;
+            if (personaSelectResults) personaSelectResults.value = saved;
+        });
+
+        const savePersona = (e) => {
+            const val = e.target.value;
+            if (personaSelectIdle) personaSelectIdle.value = val;
+            if (personaSelectResults) personaSelectResults.value = val;
+            chrome.storage.local.set({ selectedPersona: val });
+        };
+
+        if (personaSelectIdle) personaSelectIdle.addEventListener('change', savePersona);
+        if (personaSelectResults) personaSelectResults.addEventListener('change', savePersona);
+    }
+    initPersonas();
+
     // Tentar carregar resultados anteriores
     chrome.runtime.sendMessage({ action: 'getLastResults' }, (results) => {
         if (results && !results.error && results.issues) {

@@ -252,6 +252,25 @@
 
     html += `
         <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#64748b;margin:14px 0 8px;padding-bottom:5px;border-bottom:1px solid rgba(255,255,255,0.06);">
+          Modos de Análise (Personas)
+        </div>`;
+
+    const PERSONAS = [
+      { name: 'Completo', desc: 'Analisa e relata todos os problemas do DOM para buscar uma conformidade estrita (Recomendado para acessibilidade final).' },
+      { name: 'Equilibrado', desc: 'Filtra os problemas classificados como "Menores". Ideal para identificar apenas o que afeta ou barra a usabilidade e navegação.' },
+      { name: 'Crítico', desc: 'Rigoroso. Foca estritamente em problemas Críticos e Sérios (Blockers). Sugerido para entregas ágeis e correções urgentes.' }
+    ];
+
+    PERSONAS.forEach(p => {
+      html += `
+            <div style="display:flex;align-items:flex-start;gap:10px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.03);">
+              <div style="width:12px;height:12px;border-radius:50%;border:2px solid #667eea;background:transparent;flex-shrink:0;margin-top:3px;"></div>
+              <div style="flex:1;"><div style="font-size:11px;font-weight:700;color:#f1f5f9;">${p.name}</div><div style="font-size:10px;color:#94a3b8;line-height:1.3;">${p.desc}</div></div>
+            </div>`;
+    });
+
+    html += `
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#64748b;margin:14px 0 8px;padding-bottom:5px;border-bottom:1px solid rgba(255,255,255,0.06);">
           Níveis de Severidade
         </div>`;
 

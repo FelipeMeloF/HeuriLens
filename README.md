@@ -128,7 +128,17 @@ Os defeitos são categorizados em **4 níveis** baseados em um algoritmo que com
 | 🟡 **Moderado** | ≥ 2.0 | Causa alguma dificuldade |
 | 🔵 **Menor** | < 2.0 | Impacto baixo, melhoria recomendada |
 
-### 4. 🖥️ Interface do Usuário (Popup)
+### 4. 🎭 Personas de Análise (Modos Filtro)
+
+O usuário pode alternar a "rigidez" da auditoria selecionando 3 modos de atuação pré os testes:
+
+| Persona | O que audita | Foco Principal |
+|:---:|---|---|
+| **Completo** | Todos os alertas, do Nível Menor até o Crítico | Visão holística da conformidade WCAG e acessibilidade bruta |
+| **Equilibrado** | Exclui alertas de impacto "Menor" (minor) | Experiência de uso. Isolar erros que ativamente prejudicam a navegação |
+| **Foco Crítico** | Mostra apenas os blockers (Sérios e Críticos) | Entregas Ágeis de QA e correção imediata em pipelines CI/CD |
+
+### 5. 🖥️ Interface do Usuário (Popup)
 
 Dashboard premium com **dark mode** e **glassmorphism**:
 
@@ -137,7 +147,7 @@ Dashboard premium com **dark mode** e **glassmorphism**:
 - **Estatísticas** de testes aprovados e não aplicáveis
 - **3 estados visuais**: idle → analisando → resultados (+ estado de erro)
 
-### 5. 🎯 Overlay Visual
+### 6. 🎯 Overlay Visual
 
 Badges circulares com ícones SVG diferenciados por tipo de problema, injetados sobre os elementos:
 
@@ -149,7 +159,7 @@ Badges circulares com ícones SVG diferenciados por tipo de problema, injetados 
 - **Reposicionamento automático** em scroll e resize
 - **Animação de pulse** para chamar atenção
 
-### 6. 🔲 Painel Flutuante Reposicionável
+### 7. 🔲 Painel Flutuante Reposicionável
 
 - **Drag & drop** — arraste livremente pela tela
 - **Minimizar/fechar** — controles no cabeçalho
@@ -157,16 +167,18 @@ Badges circulares com ícones SVG diferenciados por tipo de problema, injetados 
 - **Persistência de posição** via `localStorage`
 - Dashboard completo com reanálise, overlay e exportação JSON
 
-### 7. ❓ Guia de Legendas
+### 8. ❓ Guia de Legendas
 
 Acessível tanto no popup quanto no painel flutuante:
+
+- **Modos de Análise** — Completo, Equilibrado (Sem Minor), Crítico (Blockers)
 
 - **Níveis WCAG** — A (essencial), AA (recomendado), AAA (ideal)
 - **Severidade** — Crítico, Sério, Moderado, Menor com descrição de impacto
 - **Ícones** — Grid visual com todos os 20 tipos de problema da extensão
 - **Heurísticas de Nielsen** — H1 a H10 com nome e descrição
 
-### 8. 📄 Exportação JSON (formato Lighthouse)
+### 9. 📄 Exportação JSON (formato Lighthouse)
 
 Relatório completo em JSON contendo:
 

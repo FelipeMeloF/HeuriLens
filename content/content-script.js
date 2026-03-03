@@ -12,7 +12,7 @@
      * Executa a auditoria completa na página atual.
      * @returns {Object} Resultados processados da auditoria
      */
-    async function runAudit() {
+    async function runAudit(persona = 'completo') {
         try {
             // Verificar se axe-core está disponível
             if (typeof axe === 'undefined') {
@@ -93,12 +93,22 @@
             // Ordenar por severidade (mais graves primeiro)
             processedIssues.sort((a, b) => (b.severity?.score || 0) - (a.severity?.score || 0));
 
+            // Filtrar baseado na persona
+            let filteredIssues = processedIssues;
+            if (persona === 'equilibrado') {
+                filteredIssues = processedIssues.filter(issue => issue.severity?.level !== 'minor');
+            } else if (persona === 'critico') {
+                filteredIssues = processedIssues.filter(issue =>
+                    issue.severity?.level === 'critical' || issue.severity?.level === 'serious'
+                );
+            }
+
             // Calcular resumo
-            const summary = severityCalc.calculateSummary(processedIssues);
+            const summary = severityCalc.calculateSummary(filteredIssues);
 
             // Organizar por heurística
             const byHeuristic = {};
-            processedIssues.forEach(issue => {
+            filteredIssues.forEach(issue => {
                 const hId = issue.nielsenHeuristic?.id || 'unknown';
                 if (!byHeuristic[hId]) {
                     byHeuristic[hId] = {
@@ -115,18 +125,18 @@
                 pageTitle: document.title,
                 timestamp: new Date().toISOString(),
                 summary: summary,
-                issues: processedIssues,
+                issues: filteredIssues,
                 byHeuristic: byHeuristic,
                 passes: (axeResults.passes || []).length,
                 inapplicable: (axeResults.inapplicable || []).length
             };
 
             // Salvar para uso do overlay
-            window.__heuristicAuditor_lastIssues = processedIssues;
+            window.__heuristicAuditor_lastIssues = filteredIssues;
 
             // Renderizar overlay
             if (overlay) {
-                overlay.renderOverlay(processedIssues);
+                overlay.renderOverlay(filteredIssues);
             }
 
             return results;

@@ -11,7 +11,7 @@ let lastAuditResults = null;
 /**
  * Injeta todos os scripts necessários na aba ativa e executa a auditoria.
  */
-async function runAuditOnTab(tabId) {
+async function runAuditOnTab(tabId, persona = 'completo') {
   try {
     // Injetar axe-core primeiro
     await chrome.scripting.executeScript({
@@ -39,12 +39,13 @@ async function runAuditOnTab(tabId) {
     // Executar a auditoria
     const results = await chrome.scripting.executeScript({
       target: { tabId },
-      func: () => {
+      func: (persona) => {
         if (typeof window.__heuristicAuditor_runAudit === 'function') {
-          return window.__heuristicAuditor_runAudit();
+          return window.__heuristicAuditor_runAudit(persona);
         }
         return { error: 'Função de auditoria não encontrada.' };
-      }
+      },
+      args: [persona]
     });
 
     if (results && results[0] && results[0].result) {
@@ -131,9 +132,10 @@ function generateExportReport(auditResults) {
  */
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'runAudit') {
+    const persona = message.persona || 'completo';
     chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
       if (tabs[0]) {
-        const results = await runAuditOnTab(tabs[0].id);
+        const results = await runAuditOnTab(tabs[0].id, persona);
         sendResponse(results);
       } else {
         sendResponse({ error: 'Nenhuma aba ativa encontrada.' });
