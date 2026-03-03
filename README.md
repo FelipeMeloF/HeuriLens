@@ -132,23 +132,23 @@ Onde:
 - **$W_{impact}$ (Peso Base Axe):** Definido pelo *axe-core* como Menor ($1$), Moderado ($2$), Sério ($3$) ou Crítico ($4$).
 - **$B_{f}$ (Bônus de Frequência):** Penaliza erros que se repetem demasiadas vezes ($f$ instâncias do mesmo erro).
 
-  $$
-  B_{f} = \begin{cases} 
-  1.5 & \text{se } f \ge 10 \\
-  1.0 & \text{se } 5 \le f < 10 \\
-  0.5 & \text{se } 3 \le f < 5 \\
-  0.0 & \text{se } f < 3
-  \end{cases}
-  $$
+$$
+B_{f} = \begin{cases} 
+1.5 & \text{se } f \ge 10 \\
+1.0 & \text{se } 5 \le f < 10 \\
+0.5 & \text{se } 3 \le f < 5 \\
+0.0 & \text{se } f < 3
+\end{cases}
+$$
 
 - **$B_{c}$ (Bônus de Contexto Crítico):** Agrava erros localizados em fragmentos HTML essenciais para interação/navegação da página.
 
-  $$
-  B_{c} = \begin{cases}
-  0.5 & \text{se em Contexto Crítico} \\
-  0.0 & \text{se Não}
-  \end{cases}
-  $$
+$$
+B_{c} = \begin{cases}
+0.5 & \text{se em Contexto Crítico} \\
+0.0 & \text{se Não}
+\end{cases}
+$$
 
 Ao final dessa equação, o problema recebe uma tag fixa baseada em sua nota final, que orientará o motor das Personas (Modos Filtro):
 
