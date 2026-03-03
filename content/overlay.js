@@ -298,6 +298,7 @@
         badge.dataset.severity = issue.severity?.level || 'minor';
         badge.dataset.ruleId = issue.id || '';
         badge.dataset.targetSelector = issue.targetSelector || '';
+        badge.dataset.heuristicId = issue.nielsenHeuristic?.id || '';
         badge.style.cssText = `
       position: fixed;
       top: ${rect.top - 12}px;
@@ -424,12 +425,42 @@
         document.getElementById(OVERLAY_CONTAINER_ID)?.appendChild(tooltip);
     }
 
-    /**
-     * Esconde o tooltip ativo.
-     */
     function hideTooltip() {
         const tooltips = document.querySelectorAll(`.${TOOLTIP_CLASS}`);
         tooltips.forEach(t => t.remove());
+    }
+
+    /**
+     * Filtra a exibição dos badges mostrando apenas de uma heurística
+     */
+    function filterOverlayByHeuristic(heuristicId) {
+        if (!isOverlayVisible && window.__heuristicAuditor_lastIssues) {
+            renderOverlay(window.__heuristicAuditor_lastIssues);
+        }
+
+        const container = document.getElementById(OVERLAY_CONTAINER_ID);
+        if (!container) return;
+
+        const badges = container.querySelectorAll(`.${BADGE_CLASS}`);
+        badges.forEach(badge => {
+            if (!heuristicId) {
+                badge.style.opacity = '1';
+                badge.style.pointerEvents = 'all';
+                return;
+            }
+
+            if (badge.dataset.heuristicId === heuristicId) {
+                badge.style.opacity = '1';
+                badge.style.pointerEvents = 'all';
+                badge.style.transform = 'scale(1.1)';
+                badge.style.zIndex = '2147483647';
+            } else {
+                badge.style.opacity = '0.08';
+                badge.style.pointerEvents = 'none';
+                badge.style.transform = 'scale(1)';
+                badge.style.zIndex = '1';
+            }
+        });
     }
 
     /**
@@ -522,6 +553,7 @@
     }
 
     // Exportar
-    window.__heuristicAuditor_overlay = { renderOverlay, removeOverlay, toggleOverlay };
+    window.__heuristicAuditor_overlay = { renderOverlay, removeOverlay, toggleOverlay, filterOverlayByHeuristic };
     window.__heuristicAuditor_toggleOverlay = toggleOverlay;
+    window.__heuristicAuditor_filterOverlayByHeuristic = filterOverlayByHeuristic;
 })();

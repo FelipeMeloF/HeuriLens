@@ -99,6 +99,10 @@
     const btnAnalyze = document.getElementById('btn-analyze');
     const btnReanalyze = document.getElementById('btn-reanalyze');
     const btnExport = document.getElementById('btn-export');
+    const btnExportCsv = document.getElementById('btn-export-csv');
+    const btnExportPdf = document.getElementById('btn-export-pdf');
+    const btnExportDropdown = document.getElementById('btn-export-dropdown');
+    const exportMenu = document.getElementById('export-menu');
     const btnToggleOverlay = document.getElementById('btn-toggle-overlay');
     const btnRetry = document.getElementById('btn-retry');
 
@@ -118,6 +122,11 @@
     const pageUrl = document.getElementById('page-url');
     const issuesList = document.getElementById('issues-list');
     const errorMessage = document.getElementById('error-message');
+
+    const customPersonaOverlay = document.getElementById('custom-persona-overlay');
+    const btnCloseCustomPersona = document.getElementById('btn-close-custom-persona');
+    const btnSaveCustomPersona = document.getElementById('btn-save-custom-persona');
+    const customHeuristicList = document.getElementById('custom-heuristic-list');
 
     // === Gerenciamento de Estado ===
     let currentResults = null;
@@ -392,16 +401,158 @@
         });
     }
 
+    // === Exportação CSV ===
+    function exportCsvReport() {
+        chrome.runtime.sendMessage({ action: 'exportReport' }, (report) => {
+            if (chrome.runtime.lastError || !report || !report.issues) {
+                showError('Não foi possível gerar o CSV.');
+                return;
+            }
+
+            const rows = [
+                ['Regra', 'Descricao', 'Severidade', 'Impacto', 'WCAG', 'Heuristica Nielsen', 'Frequencia', 'Instancias (Target HTML)']
+            ];
+
+            report.issues.forEach(issue => {
+                const wcag = (issue.wcagCriteria || []).join(', ');
+                const nielsen = issue.nielsenHeuristic?.name || '';
+                const nodes = (issue.nodes || []).map(n => n.target ? n.target.join(' ') : '').join(' | ');
+
+                rows.push([
+                    `"${issue.id}"`,
+                    `"${issue.description.replace(/"/g, '""')}"`,
+                    `"${issue.severity?.level || ''}"`,
+                    `"${issue.severity?.impact || ''}"`,
+                    `"${wcag}"`,
+                    `"${nielsen}"`,
+                    `"${issue.nodes?.length || 0}"`,
+                    `"${nodes.replace(/"/g, '""')}"`
+                ]);
+            });
+
+            const csvContent = "\uFEFF" + rows.map(e => e.join(',')).join("\n");
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `heuristic-audit-${timestamp}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+    }
+
+    // === Exportação PDF (Relatório HTML) ===
+    function exportPdfReport() {
+        chrome.runtime.sendMessage({ action: 'exportReport' }, (report) => {
+            if (chrome.runtime.lastError || !report || !report.issues) {
+                showError('Não foi possível gerar o PDF.');
+                return;
+            }
+
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            let html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Relatório de Auditoria HeuriLens</title>
+  <style>
+    body { font-family: 'Segoe UI', system-ui, sans-serif; color: #333; line-height: 1.5; padding: 40px; margin: 0; background: #fff; }
+    h1 { color: #1a1a2e; border-bottom: 2px solid #667eea; padding-bottom: 10px; font-size: 24px; }
+    .meta-info { margin-bottom: 30px; padding: 15px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 14px; }
+    .issue-card { margin-bottom: 20px; border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; page-break-inside: avoid; }
+    .issue-header { padding: 10px 14px; background: #f1f5f9; font-weight: bold; border-bottom: 1px solid #cbd5e1; display: flex; justify-content: space-between; align-items: center; }
+    .issue-body { padding: 14px; font-size: 13px; }
+    .tag { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-left: 6px; }
+    .tag.critical { background: #fee2e2; color: #ef4444; border: 1px solid #fca5a5; }
+    .tag.serious { background: #ffedd5; color: #f97316; border: 1px solid #fdba74; }
+    .tag.moderate { background: #fef9c3; color: #eab308; border: 1px solid #fde047; }
+    .tag.minor { background: #dbeafe; color: #3b82f6; border: 1px solid #bfdbfe; }
+    .nodes { margin-top: 8px; background: #f8fafc; padding: 8px; font-family: monospace; font-size: 11px; color: #475569; overflow-wrap: anywhere; border: 1px solid #e2e8f0; border-radius: 4px; }
+    @media print { body { padding: 0; } .issue-card { margin-bottom: 15px; } }
+  </style>
+</head>
+<body>
+  <h1>Relatório de Auditoria — HeuriLens</h1>
+  <div class="meta-info">
+    <div><strong>URL Analisada:</strong> <a href="${report.meta.url}" target="_blank">${report.meta.url}</a></div>
+    <div style="margin-top:4px;"><strong>Data da Análise:</strong> ${new Date().toLocaleString()}</div>
+    <div style="margin-top:4px;"><strong>Problemas Encontrados:</strong> ${report.issues.length}</div>
+  </div>
+  <h2>Detalhamento dos Problemas</h2>
+`;
+
+            report.issues.sort((a, b) => {
+                const lev = { critical: 4, serious: 3, moderate: 2, minor: 1 };
+                return (lev[b.severity?.level] || 0) - (lev[a.severity?.level] || 0);
+            }).forEach(issue => {
+                const sLevel = issue.severity?.level || 'minor';
+                const sLabel = { critical: 'Crítico', serious: 'Sério', moderate: 'Moderado', minor: 'Menor' }[sLevel] || 'Menor';
+                const wcag = (issue.wcagCriteria || []).join(', ') || 'N/A';
+                const nielsen = issue.nielsenHeuristic?.name || 'Não classificada';
+                const hId = issue.nielsenHeuristic?.id ? ` (${issue.nielsenHeuristic.id})` : '';
+                const nodesHtml = (issue.nodes || []).map(n => n.target ? n.target.join(' ') : '').join('<br/><br/>');
+
+                html += `
+  <div class="issue-card">
+    <div class="issue-header">
+      <span style="font-size:14px;">${issue.id}</span>
+      <span class="tag ${sLevel}">${sLabel}</span>
+    </div>
+    <div class="issue-body">
+      <div style="margin-bottom: 8px;"><strong>Descrição:</strong> ${escapeHtml(issue.description || '')}</div>
+      <div style="margin-bottom: 8px;"><strong>Heurística:</strong> ${escapeHtml(nielsen)}${hId}</div>
+      <div style="margin-bottom: 8px;"><strong>WCAG:</strong> ${wcag}</div>
+      <div style="margin-bottom: 4px;"><strong>Instâncias Afetadas:</strong> ${issue.nodes?.length || 0}</div>
+      <div class="nodes">${nodesHtml.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/<br\/&gt;<br\/&gt;/g, '<br/><br/>') || 'Nenhuma instância DOM apontada'}</div>
+    </div>
+  </div>`;
+            });
+
+            html += `
+  <script>
+    window.onload = function() {
+        setTimeout(function() { window.print(); }, 800);
+    }
+  </script>
+</body>
+</html>`;
+
+            const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            chrome.tabs.create({ url: url });
+        });
+    }
+
     // === Toggle Overlay ===
     function toggleOverlay() {
         chrome.runtime.sendMessage({ action: 'toggleOverlay' });
     }
 
-    // === Event Listeners ===
+    // === Controladores do Dropdown de Exportação ===
+    if (btnExportDropdown && exportMenu) {
+        btnExportDropdown.addEventListener('click', (e) => {
+            e.stopPropagation();
+            exportMenu.style.display = exportMenu.style.display === 'none' ? 'flex' : 'none';
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!exportMenu.contains(e.target) && e.target !== btnExportDropdown) {
+                exportMenu.style.display = 'none';
+            }
+        });
+    }
+
+    // === Event Listeners Extras ===
     btnAnalyze.addEventListener('click', startAudit);
     btnReanalyze.addEventListener('click', startAudit);
     btnRetry.addEventListener('click', startAudit);
-    btnExport.addEventListener('click', exportReport);
+
+    if (btnExport) btnExport.addEventListener('click', (e) => { e.stopPropagation(); if (exportMenu) exportMenu.style.display = 'none'; exportReport(); });
+    if (btnExportCsv) btnExportCsv.addEventListener('click', (e) => { e.stopPropagation(); if (exportMenu) exportMenu.style.display = 'none'; exportCsvReport(); });
+    if (btnExportPdf) btnExportPdf.addEventListener('click', (e) => { e.stopPropagation(); if (exportMenu) exportMenu.style.display = 'none'; exportPdfReport(); });
+
     btnToggleOverlay.addEventListener('click', toggleOverlay);
 
     // === Destacar na Página (painel flutuante) ===
@@ -421,6 +572,65 @@
     const legendOverlay = document.getElementById('legend-overlay');
     const btnCloseLegend = document.getElementById('btn-close-legend');
     const legendIconsGrid = document.getElementById('legend-icons-grid');
+
+    const btnHistory = document.getElementById('btn-history');
+    const historyOverlay = document.getElementById('history-overlay');
+    const btnCloseHistory = document.getElementById('btn-close-history');
+    const historyList = document.getElementById('history-list');
+
+    if (btnHistory && historyOverlay) {
+        btnHistory.addEventListener('click', () => {
+            historyOverlay.classList.remove('hidden');
+            loadHistory();
+        });
+    }
+
+    if (btnCloseHistory) {
+        btnCloseHistory.addEventListener('click', () => {
+            historyOverlay.classList.add('hidden');
+        });
+    }
+
+    function loadHistory() {
+        if (!historyList) return;
+        historyList.innerHTML = '<p style="color:#94a3b8; font-size:12px; text-align:center;">Carregando histórico...</p>';
+
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            if (!tabs || !tabs[0] || !tabs[0].url) {
+                historyList.innerHTML = '<p style="color:#94a3b8; font-size:12px; text-align:center;">Nenhuma aba ativa para buscar histórico.</p>';
+                return;
+            }
+
+            chrome.runtime.sendMessage({ action: 'getHistory', url: tabs[0].url }, (history) => {
+                if (!history || history.length === 0) {
+                    historyList.innerHTML = '<p style="color:#94a3b8; font-size:12px; text-align:center;">Nenhum histórico recente para este domínio.</p>';
+                    return;
+                }
+
+                let html = '';
+                history.forEach(item => {
+                    const date = new Date(item.timestamp);
+                    const dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    const pathName = new URL(item.url).pathname;
+
+                    html += `
+                        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; padding: 10px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
+                                <span style="font-size:11px; color:#f1f5f9; font-weight:600;">${dateStr}</span>
+                                <a href="${item.url}" target="_blank" style="font-size:10px; color:#667eea; max-width:140px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-decoration:none;" title="${item.url}" onmouseover="this.style.textDecoration='underline';" onmouseout="this.style.textDecoration='none';">${item.url}</a>
+                            </div>
+                            <div style="display:flex; gap:6px;">
+                                <div style="display:flex; align-items:center; gap:4px; font-size:10px; font-weight:700; color:#dc2626;"><span style="width:8px; height:8px; border-radius:50%; background:#dc2626;"></span>${item.summary?.critical || 0}</div>
+                                <div style="display:flex; align-items:center; gap:4px; font-size:10px; font-weight:700; color:#ea580c;"><span style="width:8px; height:8px; border-radius:50%; background:#ea580c;"></span>${item.summary?.serious || 0}</div>
+                                <div style="display:flex; align-items:center; gap:4px; font-size:10px; font-weight:700; color:#ca8a04;"><span style="width:8px; height:8px; border-radius:50%; background:#ca8a04;"></span>${item.summary?.moderate || 0}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                historyList.innerHTML = html;
+            });
+        });
+    }
 
     if (btnLegend && legendOverlay) {
         btnLegend.addEventListener('click', () => {
@@ -488,12 +698,70 @@
             if (personaSelectIdle) personaSelectIdle.value = val;
             if (personaSelectResults) personaSelectResults.value = val;
             chrome.storage.local.set({ selectedPersona: val });
+            if (val === 'custom') openCustomPersonaOverlay();
         };
 
         if (personaSelectIdle) personaSelectIdle.addEventListener('change', savePersona);
         if (personaSelectResults) personaSelectResults.addEventListener('change', savePersona);
+
+        if (btnCloseCustomPersona) btnCloseCustomPersona.addEventListener('click', () => customPersonaOverlay.classList.add('hidden'));
+        if (btnSaveCustomPersona) btnSaveCustomPersona.addEventListener('click', saveCustomConfig);
     }
+
+    function openCustomPersonaOverlay() {
+        if (!customPersonaOverlay) return;
+        customPersonaOverlay.classList.remove('hidden');
+        renderCustomHeuristics();
+    }
+
+    function renderCustomHeuristics() {
+        chrome.storage.sync.get('customPersonaConfig', (data) => {
+            const config = data.customPersonaConfig || { "H1": true, "H2": true, "H3": true, "H4": true, "H5": true, "H6": true, "H7": true, "H8": true, "H9": true, "H10": true };
+            const names = {
+                H1: 'Visibilidade do Sistema', H2: 'Compatibilidade Sis.-Mundo', H3: 'Controle e Liberdade',
+                H4: 'Consistência e Padrões', H5: 'Prevenção de Erros', H6: 'Reconhecimento > Recordação',
+                H7: 'Eficiência / Flexibilidade', H8: 'Estética e Minimalismo', H9: 'Ajuda para Erros', H10: 'Ajuda e Documentação'
+            };
+
+            let html = '';
+            for (let i = 1; i <= 10; i++) {
+                const id = 'H' + i;
+                const checked = config[id] !== false ? 'checked' : '';
+                html += `
+                 <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:#cbd5e1;cursor:pointer;padding:6px;background:rgba(255,255,255,0.03);border-radius:4px;border:1px solid rgba(255,255,255,0.05);">
+                   <input type="checkbox" class="__ha-custom-chk" value="${id}" ${checked}> 
+                   <span style="font-weight:bold;color:#a78bfa;">${id}</span> ${names[id]}
+                 </label>
+               `;
+            }
+            if (customHeuristicList) customHeuristicList.innerHTML = html;
+        });
+    }
+
+    function saveCustomConfig() {
+        if (!customPersonaOverlay) return;
+        const config = {};
+        document.querySelectorAll('.__ha-custom-chk').forEach(chk => {
+            config[chk.value] = chk.checked;
+        });
+        chrome.storage.sync.set({ customPersonaConfig: config }, () => {
+            customPersonaOverlay.classList.add('hidden');
+            // Automatic re-analyze if we are on results
+            if (!stateResults.classList.contains('hidden')) startAudit();
+        });
+    }
+
+    // === Internacionalização ===
+    function initI18n() {
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const msg = chrome.i18n.getMessage(el.getAttribute('data-i18n'));
+            if (msg) el.innerText = msg;
+        });
+    }
+
+    // Inicialização unificada
     initPersonas();
+    initI18n();
 
     // Tentar carregar resultados anteriores
     chrome.runtime.sendMessage({ action: 'getLastResults' }, (results) => {

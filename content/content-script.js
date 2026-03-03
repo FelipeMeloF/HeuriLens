@@ -10,9 +10,11 @@
 
     /**
      * Executa a auditoria completa na página atual.
+     * @param {string} persona - Tipo de filtro
+     * @param {object} customConfig - Configuração Cloud Sync customizada
      * @returns {Object} Resultados processados da auditoria
      */
-    async function runAudit(persona = 'completo') {
+    async function runAudit(persona = 'completo', customConfig = null) {
         try {
             // Verificar se axe-core está disponível
             if (typeof axe === 'undefined') {
@@ -85,7 +87,8 @@
                         html: node.html,
                         target: node.target,
                         failureSummary: node.failureSummary,
-                        impact: node.impact
+                        impact: node.impact,
+                        data: node.any?.[0]?.data || node.all?.[0]?.data
                     }))
                 };
             });
@@ -101,6 +104,13 @@
                 filteredIssues = processedIssues.filter(issue =>
                     issue.severity?.level === 'critical' || issue.severity?.level === 'serious'
                 );
+            } else if (persona === 'custom' && customConfig) {
+                // Filter by Custom Heuristics Sync
+                filteredIssues = processedIssues.filter(issue => {
+                    const hId = issue.nielsenHeuristic?.id;
+                    if (!hId) return true; // uncategorized stays
+                    return customConfig[hId] !== false; // If explicitly false, exclude it
+                });
             }
 
             // Calcular resumo

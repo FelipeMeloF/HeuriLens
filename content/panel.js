@@ -16,6 +16,7 @@
   }
 
   let activeSeverityFilter = null; // null = todos, 'critical', etc.
+  let activeHeuristicFilter = null; // Filtro visual no overlay
 
   // === Ícones SVG por tipo de problema ===
   const PANEL_RULE_ICONS = {
@@ -180,7 +181,7 @@
     <div style="display:flex;gap:6px;" id="__ha-panel-controls"></div>
   `;
 
-  // Botão legendas
+  // === Legend drawer ===
   const btnLegendPanel = document.createElement('button');
   btnLegendPanel.innerHTML = `<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.3"/><path d="M6 6.5a2 2 0 1 1 2.5 1.94c-.41.12-.5.38-.5.56v.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><circle cx="8" cy="12" r="0.7" fill="currentColor"/></svg>`;
   btnLegendPanel.style.cssText = `width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;`;
@@ -539,16 +540,24 @@
       </div>
 
       <!-- Actions -->
-      <div style="display:flex;gap:6px;margin-bottom:14px;">
+      <div style="display:flex;gap:6px;margin-bottom:14px;position:relative;">
         <button class="__ha-pnl-btn" data-action="reanalyze" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;color:#94a3b8;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;font-family:inherit;">
           ↻ Reanalisar
         </button>
         <button class="__ha-pnl-btn" data-action="overlay" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;color:#94a3b8;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;font-family:inherit;">
           ◉ Overlay
         </button>
-        <button class="__ha-pnl-btn" data-action="export" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;background:linear-gradient(135deg,#667eea,#764ba2);border:none;border-radius:8px;color:white;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;font-family:inherit;box-shadow:0 2px 8px rgba(102,126,234,0.25);">
-          ↓ JSON
-        </button>
+        <div style="flex:1;position:relative;" id="__ha-pnl-export-wrapper">
+          <button id="__ha-btn-export-dropdown" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px;background:linear-gradient(135deg,#667eea,#764ba2);border:none;border-radius:8px;color:white;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;font-family:inherit;box-shadow:0 2px 8px rgba(102,126,234,0.25);">
+            ↓ Exportar ▼
+          </button>
+          
+          <div id="__ha-pnl-export-menu" style="display:none;position:absolute;bottom:100%;right:0;margin-bottom:6px;background:#1e1e2d;border:1px solid rgba(255,255,255,0.1);border-radius:8px;box-shadow:0 -8px 24px rgba(0,0,0,0.6);z-index:100;min-width:120px;flex-direction:column;overflow:hidden;">
+            <button class="__ha-pnl-export-item" data-action="export-json" style="background:transparent;border:none;color:#f1f5f9;padding:10px 14px;font-size:11px;font-weight:600;text-align:left;cursor:pointer;width:100%;border-bottom:1px solid rgba(255,255,255,0.04);transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='transparent'">↓ JSON</button>
+            <button class="__ha-pnl-export-item" data-action="export-csv" style="background:transparent;border:none;color:#f1f5f9;padding:10px 14px;font-size:11px;font-weight:600;text-align:left;cursor:pointer;width:100%;border-bottom:1px solid rgba(255,255,255,0.04);transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='transparent'">↓ CSV</button>
+            <button class="__ha-pnl-export-item" data-action="export-pdf" style="background:transparent;border:none;color:#f1f5f9;padding:10px 14px;font-size:11px;font-weight:600;text-align:left;cursor:pointer;width:100%;transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='transparent'">↓ PDF (Imprimir)</button>
+          </div>
+        </div>
       </div>
 
       <!-- Issues header -->
@@ -593,6 +602,76 @@
         const wcag = (issue.wcagCriteria || []).map(c => `<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(167,139,250,0.1);color:#a78bfa;font-weight:500;">WCAG ${c}</span>`).join(' ');
         const nCount = (issue.nodes || []).length;
 
+        function generateSnippetHtml(iss) {
+          if (!iss.nodes || iss.nodes.length === 0) return '';
+          const targetHtml = iss.nodes[0].html || '';
+          if (!targetHtml) return '';
+          let suggestion = '';
+
+          if (iss.id === 'image-alt') {
+            suggestion = targetHtml.replace(/<img(.*?)\/?>/i, (m, attrs) => {
+              if (!attrs.includes('alt=')) return `<img${attrs} alt="descreva a imagem">`;
+              return m;
+            });
+          } else if (iss.id === 'button-name' || iss.id === 'link-name') {
+            suggestion = targetHtml.replace(/<(a|button)(.*?)>/i, (m, tag, attrs) => {
+              if (!attrs.includes('aria-label=')) return `<${tag}${attrs} aria-label="Texto restrito">`;
+              return m;
+            });
+          } else if (iss.id === 'label') {
+            suggestion = `<label for="...">Rótulo</label>\n` + targetHtml;
+          } else if (iss.id === 'html-has-lang') {
+            suggestion = `<html lang="pt-BR">`;
+          } else if (iss.id === 'color-contrast') {
+            const data = iss.nodes[0].data || {};
+            const fg = data.fgColor || '#000000';
+            const bg = data.bgColor || '#ffffff';
+            const ratio = data.contrastRatio || '?';
+            const targetStr = iss.nodes[0].target ? iss.nodes[0].target.join(' ') : '';
+            return `
+              <div style="margin-top:8px;background:rgba(0,0,0,0.25);border:1px solid rgba(250,204,21,0.2);border-radius:6px;padding:8px;" class="__ha-contrast-lab">
+                <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:#fde047;font-weight:700;margin-bottom:6px;text-transform:uppercase;">
+                  <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0a8 8 0 100 16A8 8 0 008 0zM8 14V2a6 6 0 110 12z"/></svg>
+                  Lab de Contraste Dinâmico
+                </div>
+                <div style="display:flex;gap:10px;align-items:center;font-size:10px;margin-bottom:2px;">
+                  <label style="display:flex;align-items:center;gap:4px;color:#cbd5e1;cursor:pointer;">
+                    Texto: <input type="color" class="__ha-lab-fg" value="${fg}" data-target="${esc(targetStr)}" style="width:16px;height:16px;padding:0;border:none;background:transparent;cursor:pointer;">
+                  </label>
+                  <label style="display:flex;align-items:center;gap:4px;color:#cbd5e1;cursor:pointer;">
+                    Fundo: <input type="color" class="__ha-lab-bg" value="${bg}" data-target="${esc(targetStr)}" style="width:16px;height:16px;padding:0;border:none;background:transparent;cursor:pointer;">
+                  </label>
+                  <div style="color:#ef4444;font-weight:bold;margin-left:auto;">Original: ${ratio}:1</div>
+                </div>
+                <div style="font-size:9px;color:#94a3b8;font-style:italic;">Altere a cor nativamente para testar na página.</div>
+              </div>
+            `;
+          }
+
+          if (suggestion && suggestion !== targetHtml) {
+            return `
+              <div style="margin-top:8px;background:rgba(0,0,0,0.25);border:1px solid rgba(167,139,250,0.15);border-radius:6px;padding:8px;">
+                <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:#c4b5fd;font-weight:700;margin-bottom:6px;text-transform:uppercase;">
+                  <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><path d="M6 0L8 4L12 6L8 8L6 12L4 8L0 6L4 4L6 0Z"/></svg>
+                  Correção Sugerida
+                </div>
+                <div style="display:flex;flex-direction:column;gap:3px;font-family:monospace;font-size:10px;overflow-x:auto;">
+                  <div style="color:#fca5a5;white-space:pre-wrap;word-break:break-all;"><span style="color:#ef4444;font-weight:bold;">-</span> ${esc(targetHtml)}</div>
+                  <div style="color:#86efac;white-space:pre-wrap;word-break:break-all;"><span style="color:#22c55e;font-weight:bold;">+</span> ${esc(suggestion)}</div>
+                </div>
+              </div>
+            `;
+          }
+
+          return `
+            <div style="margin-top:8px;background:rgba(0,0,0,0.1);border:1px dashed rgba(255,255,255,0.1);border-radius:6px;padding:8px;text-align:center;">
+                <div style="font-size:10px;color:#94a3b8;">⚠️ Nenhuma correção expressa de código disponível para esta regra.</div>
+            </div>
+          `;
+        }
+
+        const snippetHtml = generateSnippetHtml(issue);
+
         html += `
           <div style="padding:8px 12px;border-top:1px solid rgba(255,255,255,0.04);display:flex;align-items:flex-start;gap:8px;">
             <div style="width:24px;height:24px;border-radius:6px;background:${SEV[sLevel].color};color:white;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">${icon.svg}</div>
@@ -603,6 +682,7 @@
                 ${wcag}
                 <span style="font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(255,255,255,0.04);color:#64748b;">${nCount} inst.</span>
               </div>
+              ${snippetHtml}
             </div>
           </div>
         `;
@@ -615,19 +695,79 @@
 
     // === Bind actions ===
 
+    // Contrast Lab Bindings
+    body.querySelectorAll('.__ha-lab-fg').forEach(input => {
+      input.addEventListener('input', (e) => {
+        const sel = e.target.dataset.target;
+        if (sel) { const el = document.querySelector(sel); if (el) el.style.color = e.target.value; }
+      });
+    });
+    body.querySelectorAll('.__ha-lab-bg').forEach(input => {
+      input.addEventListener('input', (e) => {
+        const sel = e.target.dataset.target;
+        if (sel) { const el = document.querySelector(sel); if (el) el.style.backgroundColor = e.target.value; }
+      });
+    });
+
     // Severity Filter
     body.querySelectorAll('.__ha-sev-card').forEach(card => {
       card.addEventListener('click', () => {
         const level = card.dataset.level;
-        console.log('HeuriLens: Severity filter clicked:', level);
         activeSeverityFilter = (activeSeverityFilter === level) ? null : level;
         renderResults(results);
       });
     });
 
-    body.querySelectorAll('.__ha-pnl-btn').forEach(btn => {
-      btn.addEventListener('mouseenter', () => { btn.style.background = btn.dataset.action === 'export' ? 'linear-gradient(135deg,#667eea,#764ba2)' : 'rgba(255,255,255,0.08)'; });
-      btn.addEventListener('mouseleave', () => { btn.style.background = btn.dataset.action === 'export' ? 'linear-gradient(135deg,#667eea,#764ba2)' : 'rgba(255,255,255,0.04)'; });
+    // Heuristic Overlay Filter
+    body.querySelectorAll('.__ha-filter-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const hId = btn.dataset.hid;
+
+        if (activeHeuristicFilter === hId) {
+          activeHeuristicFilter = null;
+          btn.style.color = '#64748b';
+          btn.style.background = 'transparent';
+          if (typeof window.__heuristicAuditor_filterOverlayByHeuristic === 'function') {
+            window.__heuristicAuditor_filterOverlayByHeuristic(null);
+          }
+        } else {
+          // Reset visuais de todos os botões de filtro
+          body.querySelectorAll('.__ha-filter-btn').forEach(b => {
+            b.style.color = '#64748b';
+            b.style.background = 'transparent';
+          });
+          activeHeuristicFilter = hId;
+          btn.style.color = '#fff';
+          btn.style.background = 'linear-gradient(135deg,#667eea,#764ba2)';
+          if (typeof window.__heuristicAuditor_filterOverlayByHeuristic === 'function') {
+            window.__heuristicAuditor_filterOverlayByHeuristic(hId);
+          }
+        }
+      });
+    });
+
+    const btnExportDropdown = body.querySelector('#__ha-btn-export-dropdown');
+    const exportMenu = body.querySelector('#__ha-pnl-export-menu');
+
+    if (btnExportDropdown && exportMenu) {
+      btnExportDropdown.addEventListener('click', (e) => {
+        e.stopPropagation();
+        exportMenu.style.display = exportMenu.style.display === 'none' ? 'flex' : 'none';
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!exportMenu.contains(e.target) && e.target !== btnExportDropdown) {
+          exportMenu.style.display = 'none';
+        }
+      });
+    }
+
+    body.querySelectorAll('.__ha-pnl-btn, .__ha-pnl-export-item').forEach(btn => {
+      if (btn.classList.contains('__ha-pnl-btn') && !btn.id.includes('dropdown')) {
+        btn.addEventListener('mouseenter', () => { btn.style.background = btn.dataset.action === 'export' ? 'linear-gradient(135deg,#667eea,#764ba2)' : 'rgba(255,255,255,0.08)'; });
+        btn.addEventListener('mouseleave', () => { btn.style.background = btn.dataset.action === 'export' ? 'linear-gradient(135deg,#667eea,#764ba2)' : 'rgba(255,255,255,0.04)'; });
+      }
 
       btn.addEventListener('click', () => {
         if (btn.dataset.action === 'reanalyze') {
@@ -640,7 +780,8 @@
           if (typeof window.__heuristicAuditor_toggleOverlay === 'function') {
             window.__heuristicAuditor_toggleOverlay();
           }
-        } else if (btn.dataset.action === 'export') {
+        } else if (btn.dataset.action === 'export-json') {
+          if (exportMenu) exportMenu.style.display = 'none';
           chrome.runtime.sendMessage({ action: 'exportReport' }, (report) => {
             if (!report) return;
             const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
@@ -650,6 +791,50 @@
             a.download = `heuristic-audit-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
             a.click();
             URL.revokeObjectURL(url);
+          });
+        } else if (btn.dataset.action === 'export-csv') {
+          if (exportMenu) exportMenu.style.display = 'none';
+          chrome.runtime.sendMessage({ action: 'exportReport' }, (report) => {
+            if (!report || !report.issues) return;
+            const rows = [['Regra', 'Descricao', 'Severidade', 'Impacto', 'WCAG', 'Heuristica Nielsen', 'Frequencia', 'Instancias (Target HTML)']];
+            report.issues.forEach(issue => {
+              const wcag = (issue.wcagCriteria || []).join(', ');
+              const nielsen = issue.nielsenHeuristic?.name || '';
+              const nodes = (issue.nodes || []).map(n => n.target ? n.target.join(' ') : '').join(' | ');
+              rows.push([
+                `"${issue.id}"`, `"${issue.description.replace(/"/g, '""')}"`, `"${issue.severity?.level || ''}"`, `"${issue.severity?.impact || ''}"`,
+                `"${wcag}"`, `"${nielsen}"`, `"${issue.nodes?.length || 0}"`, `"${nodes.replace(/"/g, '""')}"`
+              ]);
+            });
+            const csvContent = "\uFEFF" + rows.map(e => e.join(',')).join("\n");
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `heuristic-audit-${new Date().toISOString().replace(/[:.]/g, '-')}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+          });
+        } else if (btn.dataset.action === 'export-pdf') {
+          if (exportMenu) exportMenu.style.display = 'none';
+          chrome.runtime.sendMessage({ action: 'exportReport' }, (report) => {
+            if (!report || !report.issues) return;
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            let html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Relatório de Auditoria HeuriLens</title><style>body{font-family:'Segoe UI',system-ui,sans-serif;color:#333;line-height:1.5;padding:40px;margin:0;background:#fff;}h1{color:#1a1a2e;border-bottom:2px solid #667eea;padding-bottom:10px;font-size:24px;}.meta-info{margin-bottom:30px;padding:15px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;font-size:14px;}.issue-card{margin-bottom:20px;border:1px solid #cbd5e1;border-radius:8px;overflow:hidden;page-break-inside:avoid;}.issue-header{padding:10px 14px;background:#f1f5f9;font-weight:bold;border-bottom:1px solid #cbd5e1;display:flex;justify-content:space-between;align-items:center;}.issue-body{padding:14px;font-size:13px;}.tag{display:inline-block;padding:4px 8px;border-radius:4px;font-size:11px;font-weight:bold;margin-left:6px;}.tag.critical{background:#fee2e2;color:#ef4444;border:1px solid #fca5a5;}.tag.serious{background:#ffedd5;color:#f97316;border:1px solid #fdba74;}.tag.moderate{background:#fef9c3;color:#eab308;border:1px solid #fde047;}.tag.minor{background:#dbeafe;color:#3b82f6;border:1px solid #bfdbfe;}.nodes{margin-top:8px;background:#f8fafc;padding:8px;font-family:monospace;font-size:11px;color:#475569;overflow-wrap:anywhere;border:1px solid #e2e8f0;border-radius:4px;}@media print{body{padding:0;}.issue-card{margin-bottom:15px;}}</style></head><body><h1>Relatório de Auditoria — HeuriLens</h1><div class="meta-info"><div><strong>URL Analisada:</strong> <a href="${report.meta.url}" target="_blank">${report.meta.url}</a></div><div style="margin-top:4px;"><strong>Data da Análise:</strong> ${new Date().toLocaleString()}</div><div style="margin-top:4px;"><strong>Problemas Encontrados:</strong> ${report.issues.length}</div></div><h2>Detalhamento dos Problemas</h2>`;
+            function escapeHtmlPanel(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+            report.issues.sort((a, b) => { const lev = { critical: 4, serious: 3, moderate: 2, minor: 1 }; return (lev[b.severity?.level] || 0) - (lev[a.severity?.level] || 0); }).forEach(issue => {
+              const sLevel = issue.severity?.level || 'minor';
+              const sLabel = { critical: 'Crítico', serious: 'Sério', moderate: 'Moderado', minor: 'Menor' }[sLevel] || 'Menor';
+              const wcag = (issue.wcagCriteria || []).join(', ') || 'N/A';
+              const nielsen = issue.nielsenHeuristic?.name || 'Não classificada';
+              const hId = issue.nielsenHeuristic?.id ? ` (${issue.nielsenHeuristic.id})` : '';
+              const nodesHtml = (issue.nodes || []).map(n => n.target ? n.target.join(' ') : '').join('<br/><br/>');
+              html += `<div class="issue-card"><div class="issue-header"><span style="font-size:14px;">${issue.id}</span><span class="tag ${sLevel}">${sLabel}</span></div><div class="issue-body"><div style="margin-bottom: 8px;"><strong>Descrição:</strong> ${escapeHtmlPanel(issue.description || '')}</div><div style="margin-bottom: 8px;"><strong>Heurística:</strong> ${escapeHtmlPanel(nielsen)}${hId}</div><div style="margin-bottom: 8px;"><strong>WCAG:</strong> ${wcag}</div><div style="margin-bottom: 4px;"><strong>Instâncias Afetadas:</strong> ${issue.nodes?.length || 0}</div><div class="nodes">${nodesHtml.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/&lt;br\\\/&gt;&lt;br\\\/&gt;/g, '<br/><br/>') || 'Nenhuma instância DOM apontada'}</div></div></div>`;
+            });
+            html += `<script>window.onload = function(){ setTimeout(function(){ window.print(); }, 800); }</script></body></html>`;
+            const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            chrome.tabs.create({ url: url });
           });
         }
       });

@@ -33,14 +33,23 @@
         <p class="header-subtitle">WCAG 2.1 + Nielsen</p>
       </div>
     </div>
-    <button id="btn-legend" class="btn-legend" title="Guia de Legendas">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-        <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5" />
-        <path d="M6 6.5a2 2 0 1 1 2.5 1.94c-.41.12-.5.38-.5.56v.5" stroke="currentColor" stroke-width="1.3"
-          stroke-linecap="round" />
-        <circle cx="8" cy="12" r="0.8" fill="currentColor" />
-      </svg>
-    </button>
+    </div>
+    <div style="display: flex; gap: 6px;">
+      <button id="btn-history" class="btn-legend" title="Histórico de Análises">
+        <svg fill="currentColor" width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+          <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.81V3.5z" />
+          <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z" />
+        </svg>
+      </button>
+      <button id="btn-legend" class="btn-legend" title="Guia de Legendas">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5" />
+          <path d="M6 6.5a2 2 0 1 1 2.5 1.94c-.41.12-.5.38-.5.56v.5" stroke="currentColor" stroke-width="1.3"
+            stroke-linecap="round" />
+          <circle cx="8" cy="12" r="0.8" fill="currentColor" />
+        </svg>
+      </button>
+    </div>
   </header>
 
   <!-- Estado: Idle -->
@@ -59,7 +68,8 @@
         </defs>
       </svg>
     </div>
-    <p class="idle-text">Clique para analisar a acessibilidade e usabilidade da página atual.</p>
+    <p class="idle-text" data-i18n="stateIdleMessage">Clique para analisar a acessibilidade e usabilidade da página
+      atual.</p>
 
     <div class="persona-selector"
       style="margin-bottom: 20px; text-align: left; width: 100%; max-width: 240px; margin-left: auto; margin-right: auto;">
@@ -71,6 +81,8 @@
         <option value="completo" style="background: #1a1a2e; color: #f1f5f9;">Completo (Todos Níveis)</option>
         <option value="equilibrado" style="background: #1a1a2e; color: #f1f5f9;">Equilibrado (Foco Usuário)</option>
         <option value="critico" style="background: #1a1a2e; color: #f1f5f9;">Crítico (Apenas Blockers)</option>
+        <option value="custom" style="background: #1a1a2e; color: #fde047; font-weight: bold;">Personalizado (Sync
+          Nuvem)</option>
       </select>
     </div>
 
@@ -81,7 +93,7 @@
           <path d="M11.5 11.5L16 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
         </svg>
       </span>
-      Analisar Página
+      <span data-i18n="btnAnalyze">Analisar Página</span>
     </button>
   </div>
 
@@ -92,7 +104,7 @@
       <div class="loader-ring"></div>
       <div class="loader-ring"></div>
     </div>
-    <p class="analyzing-text">Analisando a página...</p>
+    <p class="analyzing-text" data-i18n="stateAnalyzingMessage">Analisando a página...</p>
     <p class="analyzing-subtext">Executando axe-core e mapeando heurísticas</p>
   </div>
 
@@ -156,6 +168,7 @@
           <option value="completo" style="background: #1a1a2e; color: #f1f5f9;">Completo</option>
           <option value="equilibrado" style="background: #1a1a2e; color: #f1f5f9;">Equilibrado</option>
           <option value="critico" style="background: #1a1a2e; color: #f1f5f9;">Crítico</option>
+          <option value="custom" style="background: #1a1a2e; color: #fde047; font-weight: bold;">Personalizado</option>
         </select>
       </div>
       <div style="display: flex; gap: 8px; width: 100%;">
@@ -169,7 +182,7 @@
             <path d="M2 13V9.5H5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
               stroke-linejoin="round" />
           </svg>
-          Reanalisar
+          <span data-i18n="btnReanalyze">Reanalisar</span>
         </button>
         <button id="btn-toggle-overlay" class="btn-secondary">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -180,16 +193,31 @@
           </svg>
           Overlay
         </button>
-        <button id="btn-export" class="btn-primary-small">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path d="M7 1V9M7 9L4 6M7 9L10 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
-              stroke-linejoin="round" />
-            <path d="M1 10V11.5C1 12.3284 1.67157 13 2.5 13H11.5C12.3284 13 13 12.3284 13 11.5V10" stroke="currentColor"
-              stroke-width="1.5" stroke-linecap="round" />
-          </svg>
-          </svg>
-          JSON
-        </button>
+        <div style="position:relative;" id="export-dropdown-wrapper">
+          <button id="btn-export-dropdown" class="btn-primary-small" style="padding: 0 12px; gap: 6px;"
+            title="Exportar Relatório">
+            <span data-i18n="btnExport">Exportar</span>
+            <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
+              <path d="M4 6L8 10L12 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round" />
+            </svg>
+          </button>
+          <div id="export-menu"
+            style="display:none; position:absolute; bottom:100%; right:0; margin-bottom:6px; background:#1e1e2d; border:1px solid rgba(255,255,255,0.1); border-radius:8px; box-shadow:0 -8px 24px rgba(0,0,0,0.6); z-index:100; min-width:110px; flex-direction:column; overflow:hidden;">
+            <button id="btn-export"
+              style="background:transparent; border:none; color:#f1f5f9; padding:10px 14px; font-size:11px; font-weight:600; text-align:left; cursor:pointer; width:100%; border-bottom:1px solid rgba(255,255,255,0.04); font-family:inherit; transition:background 0.2s;"
+              onmouseover="this.style.background='rgba(255,255,255,0.06)'"
+              onmouseout="this.style.background='transparent'">↓ JSON</button>
+            <button id="btn-export-csv"
+              style="background:transparent; border:none; color:#f1f5f9; padding:10px 14px; font-size:11px; font-weight:600; text-align:left; cursor:pointer; width:100%; border-bottom:1px solid rgba(255,255,255,0.04); font-family:inherit; transition:background 0.2s;"
+              onmouseover="this.style.background='rgba(255,255,255,0.06)'"
+              onmouseout="this.style.background='transparent'">↓ CSV</button>
+            <button id="btn-export-pdf"
+              style="background:transparent; border:none; color:#f1f5f9; padding:10px 14px; font-size:11px; font-weight:600; text-align:left; cursor:pointer; width:100%; font-family:inherit; transition:background 0.2s;"
+              onmouseover="this.style.background='rgba(255,255,255,0.06)'"
+              onmouseout="this.style.background='transparent'">↓ PDF (Imprimir)</button>
+          </div>
+        </div>
       </div>
     </div>
     <div class="actions-bar" style="padding-top:6px;border-top:none;">
@@ -214,6 +242,39 @@
     <p id="error-message" class="error-text">Não foi possível analisar esta página.</p>
     <button id="btn-retry" class="btn-primary">Tentar Novamente</button>
   </div>
+
+  <!-- Overlay de Persona Customizada -->
+  <div id="custom-persona-overlay" class="legend-overlay hidden">
+    <div class="legend-container">
+      <div class="legend-header">
+        <h2 class="legend-title">Configurar Persona (Nuvem)</h2>
+        <button id="btn-close-custom-persona" class="btn-close-legend">&times;</button>
+      </div>
+      <div class="legend-body" style="padding: 12px; display:flex; flex-direction:column; gap:8px;">
+        <p style="color:#94a3b8; font-size:11px; margin-bottom:8px;">Ajuste as Heurísticas ligadas. Salvo na sua conta
+          Google Chrome automaticamente para toda equipe puxar (Storage Sync).</p>
+        <div id="custom-heuristic-list"
+          style="display:flex; flex-direction:column; gap:6px; max-height:220px; overflow-y:auto; padding-right:4px;">
+          <!-- rendered by JS -->
+        </div>
+        <button id="btn-save-custom-persona" class="btn-primary" style="margin-top:10px;">Salvar Mudanças</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Overlay de Histórico -->
+  <div id="history-overlay" class="legend-overlay hidden">
+    <div class="legend-container">
+      <div class="legend-header">
+        <h2 class="legend-title" data-i18n="historyRecent">Histórico Recente</h2>
+        <button id="btn-close-history" class="btn-close-legend">&times;</button>
+      </div>
+      <div class="legend-body" id="history-list" style="padding: 12px; display:flex; flex-direction:column; gap:8px;">
+        <p style="color:#94a3b8; font-size:12px; text-align:center;">Carregando histórico...</p>
+      </div>
+    </div>
+  </div>
+
   <!-- Overlay de Legendas -->
   <div id="legend-overlay" class="legend-overlay hidden">
     <div class="legend-container">

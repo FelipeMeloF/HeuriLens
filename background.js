@@ -11,12 +11,16 @@ let lastAuditResults = null;
 /**
  * Injeta todos os scripts necessários na aba ativa e executa a auditoria.
  */
-async function runAuditOnTab(tabId, persona = 'completo') {
+async function runAuditOnTab(tabId, persona = 'completo', customPersonaConfig = null) {
   try {
-    // Injetar axe-core primeiro
+    // Injetar axe-core e o locale adequado
+    const lang = chrome.i18n.getUILanguage();
+    const scriptFiles = ['lib/axe-core.min.js'];
+    if (lang.startsWith('pt')) scriptFiles.push('lib/axe-pt-br.js');
+
     await chrome.scripting.executeScript({
       target: { tabId },
-      files: ['lib/axe-core.min.js', 'lib/axe-pt-br.js']
+      files: scriptFiles
     });
 
     // Injetar módulos de análise
@@ -39,19 +43,20 @@ async function runAuditOnTab(tabId, persona = 'completo') {
     // Executar a auditoria
     const results = await chrome.scripting.executeScript({
       target: { tabId },
-      func: (persona) => {
+      func: (persona, config) => {
         if (typeof window.__heuristicAuditor_runAudit === 'function') {
-          return window.__heuristicAuditor_runAudit(persona);
+          return window.__heuristicAuditor_runAudit(persona, config);
         }
         return { error: 'Função de auditoria não encontrada.' };
       },
-      args: [persona]
+      args: [persona, customPersonaConfig]
     });
 
     if (results && results[0] && results[0].result) {
       lastAuditResults = results[0].result;
       // Salvar no storage
       await chrome.storage.local.set({ lastAuditResults: lastAuditResults });
+      await saveToHistory(lastAuditResults);
       return lastAuditResults;
     }
 
@@ -59,6 +64,37 @@ async function runAuditOnTab(tabId, persona = 'completo') {
   } catch (error) {
     console.error('[HeuristicAuditor] Erro ao executar auditoria:', error);
     return { error: error.message };
+  }
+}
+
+/**
+ * Salva o resultado no histórico (limite de 10 por domínio).
+ */
+async function saveToHistory(results) {
+  try {
+    if (!results || !results.url) return;
+    const urlObj = new URL(results.url);
+    const hostname = urlObj.hostname;
+    if (!hostname) return;
+
+    const historyKey = `history_${hostname}`;
+    const data = await chrome.storage.local.get(historyKey);
+    let history = data[historyKey] || [];
+
+    const snapshot = {
+      timestamp: results.timestamp || new Date().toISOString(),
+      url: results.url,
+      summary: results.summary
+    };
+
+    history.unshift(snapshot);
+    if (history.length > 10) {
+      history = history.slice(0, 10);
+    }
+
+    await chrome.storage.local.set({ [historyKey]: history });
+  } catch (err) {
+    console.error('Erro ao salvar histórico:', err);
   }
 }
 
@@ -135,14 +171,31 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const persona = message.persona || 'completo';
     chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
       if (tabs[0]) {
-        const results = await runAuditOnTab(tabs[0].id, persona);
-        sendResponse(results);
+        chrome.storage.sync.get('customPersonaConfig', async (configData) => {
+          const results = await runAuditOnTab(tabs[0].id, persona, configData.customPersonaConfig);
+          sendResponse(results);
+        });
       } else {
         sendResponse({ error: 'Nenhuma aba ativa encontrada.' });
       }
     });
     return true; // Mantém o canal aberto para resposta assíncrona
   }
+
+  if (message.action === 'getHistory') {
+    try {
+      const urlObj = new URL(message.url);
+      const hostname = urlObj.hostname;
+      const historyKey = `history_${hostname}`;
+      chrome.storage.local.get(historyKey, (data) => {
+        sendResponse(data[historyKey] || []);
+      });
+    } catch (err) {
+      sendResponse([]);
+    }
+    return true;
+  }
+
 
   if (message.action === 'getLastResults') {
     chrome.storage.local.get('lastAuditResults', (data) => {

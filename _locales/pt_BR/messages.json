@@ -1,0 +1,28 @@
+{
+    "appName": {
+        "message": "HeuriLens - Auditor de Acessibilidade e Usabilidade",
+        "description": "O nome da extensão"
+    },
+    "appDesc": {
+        "message": "Auditoria automática de acessibilidade (WCAG 2.1) e usabilidade (Heurísticas de Nielsen) para páginas web.",
+        "description": "Descrição da extensão"
+    },
+    "btnAnalyze": {
+        "message": "Analisar Página"
+    },
+    "btnReanalyze": {
+        "message": "Reanalisar"
+    },
+    "btnExport": {
+        "message": "Exportar"
+    },
+    "stateIdleMessage": {
+        "message": "Clique para analisar a acessibilidade e usabilidade da página atual."
+    },
+    "stateAnalyzingMessage": {
+        "message": "Analisando a página..."
+    },
+    "historyRecent": {
+        "message": "Histórico Recente"
+    }
+}
